@@ -57,7 +57,7 @@ export default function SignUpPage() {
         toast({ variant: "destructive", title: "Error", description: result.error });
       } else {
         toast({ title: "Account created", description: "Your account has been created successfully." });
-        router.push("/dashboard");
+        router.push("/dashboard"); // Redirect to dashboard after successful sign up
       }
     } catch (err) {
       setError("An unexpected error occurred");
@@ -66,6 +66,7 @@ export default function SignUpPage() {
       setIsLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row items-center justify-center p-4 relative pt-16">

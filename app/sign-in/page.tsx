@@ -137,6 +137,12 @@ export default function SignInPage() {
                 >
                   {isLoading ? "Signing in..." : "Sign in"}
                 </Button>
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-center text-muted-foreground hover:text-primary transition-colors mt-2 w-full"
+                >
+                  Forgot your password?
+                </Link>
               </CardFooter>
             </form>
           </Card>

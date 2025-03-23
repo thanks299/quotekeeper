@@ -1,56 +1,57 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { QuoteIcon, LogIn } from "lucide-react"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { signIn } from "@/app/actions"
-import { useToast } from "@/components/ui/use-toast"
-import { motion } from "framer-motion"
-import { AuthIllustration } from "@/components/auth-illustration"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signIn } from "@/app/actions";
+import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { QuoteIcon, LogIn } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { AuthIllustration } from "@/components/auth-illustration";
 
-export default function SignUpPage() {
-  const router = useRouter()
-  const { toast } = useToast()
-  const [formData, setFormData] = useState({ email: "", password: "" })
-  const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+export default function SignInPage() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
+    e.preventDefault();
+    setError("");
+
     if (!formData.email || !formData.password) {
-      setError("Email and password are required")
-      return
+      setError("Email and password are required");
+      return;
     }
-    setIsLoading(true)
+
+    setIsLoading(true);
     try {
-      const result = await signIn(formData)
+      const result = await signIn(formData);
       if (result.error) {
-        setError(result.error)
-        toast({ variant: "destructive", title: "Error", description: result.error })
+        setError(result.error);
+        toast({ variant: "destructive", title: "Error", description: result.error });
       } else {
-        toast({ title: "Welcome back!", description: "You have successfully signed in." })
-        router.push("/dashboard")
+        toast({ title: "Welcome back!", description: "You have successfully signed in." });
+        router.push("/dashboard");
       }
     } catch (err) {
-      setError("An unexpected error occurred")
-      toast({ variant: "destructive", title: "Error", description: "An unexpected error occurred. Please try again." })
+      setError("An unexpected error occurred");
+      toast({ variant: "destructive", title: "Error", description: "An unexpected error occurred. Please try again." });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row items-center justify-center p-4">
@@ -69,10 +70,10 @@ export default function SignUpPage() {
 
       {/* Left Side - Illustration (Now positioned to the far left) */}
       <div className="hidden lg:flex lg:w-1/2 h-full justify-start p-16">
-        <AuthIllustration type="signin" className="w-full max-w-lg" />
+        <AuthIllustration type="signin" />
       </div>
 
-      {/* Right Side - Sign In Form (Moved slightly down) */}
+      {/* Right Side - Sign In Form */}
       <div className="w-full lg:w-1/2 max-w-2xl mt-8">
         <motion.div
           className="w-full"
@@ -148,5 +149,5 @@ export default function SignUpPage() {
         </motion.div>
       </div>
     </div>
-  )
+  );
 }

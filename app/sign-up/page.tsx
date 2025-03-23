@@ -1,18 +1,17 @@
 "use client";
 
-import type React from "react";
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { signUp } from "@/app/actions";
+import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { QuoteIcon, UserPlus } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { signUp } from "@/app/actions";
-import { useToast } from "@/components/ui/use-toast";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { AuthIllustration } from "@/components/auth-illustration";
 
 export default function SignUpPage() {
@@ -36,6 +35,7 @@ export default function SignUpPage() {
     e.preventDefault();
     setError("");
 
+    // Form validation
     if (!formData.name || !formData.email || !formData.password) {
       setError("All fields are required");
       return;
@@ -51,22 +51,37 @@ export default function SignUpPage() {
 
     setIsLoading(true);
     try {
+      // Call the signUp function from app/actions.ts
       const result = await signUp(formData);
+
+      // Handle errors
       if (result.error) {
         setError(result.error);
-        toast({ variant: "destructive", title: "Error", description: result.error });
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: result.error,
+        });
       } else {
-        toast({ title: "Account created", description: "Your account has been created successfully." });
-        router.push("/dashboard"); // Redirect to dashboard after successful sign up
+        // Success: Redirect to dashboard
+        toast({
+          title: "Account created",
+          description: "Your account has been created successfully.",
+        });
+        router.push("/dashboard");
       }
     } catch (err) {
+      // Handle unexpected errors
       setError("An unexpected error occurred");
-      toast({ variant: "destructive", title: "Error", description: "An unexpected error occurred. Please try again." });
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+      });
     } finally {
       setIsLoading(false);
     }
   };
-
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row items-center justify-center p-4 relative pt-16">
@@ -83,7 +98,7 @@ export default function SignUpPage() {
 
       {/* Left Side - Illustration */}
       <div className="hidden lg:flex lg:w-2/3 items-center justify-center p-12">
-        <AuthIllustration type="signup" />
+      <AuthIllustration type="signin" />
       </div>
 
       {/* Right Side - Sign Up Form */}
@@ -106,33 +121,73 @@ export default function SignUpPage() {
             </CardHeader>
             <form onSubmit={handleSubmit} className="w-full">
               <CardContent className="grid gap-4">
-                {error && <div className="bg-red-100 text-red-700 p-3 rounded-md">{error}</div>}
+                {error && (
+                  <div className="bg-red-100 text-red-700 p-3 rounded-md">
+                    {error}
+                  </div>
+                )}
                 <div className="grid gap-2">
                   <Label htmlFor="name">Name</Label>
-                  <Input id="name" name="name" placeholder="John Doe" value={formData.name} onChange={handleChange} required />
+                  <Input
+                    id="name"
+                    name="name"
+                    placeholder="John Doe"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" name="email" type="email" placeholder="m@example.com" value={formData.email} onChange={handleChange} required />
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="m@example.com"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="password">Password</Label>
-                  <Input id="password" name="password" type="password" value={formData.password} onChange={handleChange} required />
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <Input id="confirmPassword" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required />
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
               </CardContent>
               <CardFooter>
-                <Button className="w-full bg-gradient-to-r from-secondary to-terracotta-light text-white shadow-lg" type="submit" disabled={isLoading}>
+                <Button
+                  className="w-full bg-gradient-to-r from-secondary to-terracotta-light text-white shadow-lg"
+                  type="submit"
+                  disabled={isLoading}
+                >
                   {isLoading ? "Creating account..." : "Create account"}
                 </Button>
               </CardFooter>
             </form>
           </Card>
           <div className="text-center text-sm mt-4">
-            Already have an account? <Link href="/sign-in" className="text-primary hover:underline">Sign in</Link>
+            Already have an account?{" "}
+            <Link href="/sign-in" className="text-primary hover:underline">
+              Sign in
+            </Link>
           </div>
         </motion.div>
       </div>

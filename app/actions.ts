@@ -292,8 +292,8 @@ export async function getQuotes() {
     const { data: userQuotes, error } = await supabase
       .from("quotes")
       .select("*")
-      .eq("user_id", session.userId)
-      .order("createdAt", { ascending: false });
+      .eq("user_id", session.user_id)
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
 
@@ -323,7 +323,7 @@ export async function addQuote(quoteData: {
       .insert([
         {
           id: uuidv4(),
-          user_id: session.userId,
+          user_id: session.user_id,
           text: quoteData.text,
           author: quoteData.author || "Unknown",
           category: quoteData.category,
@@ -366,7 +366,7 @@ export async function updateQuote(quoteData: {
         category: quoteData.category,
       })
       .eq("id", quoteData.id)
-      .eq("user_id", session.userId);
+      .eq("user_id", session.user_id);
 
     if (error) throw error;
 
@@ -393,7 +393,7 @@ export async function deleteQuote(id: string) {
       .from("quotes")
       .delete()
       .eq("id", id)
-      .eq("user_id", session.userId);
+      .eq("user_id", session.user_id);
 
     if (error) throw error;
 
@@ -420,7 +420,7 @@ export async function getCategories() {
     const { data: userCategories, error } = await supabase
       .from("categories")
       .select("name")
-      .eq("user_id", session.userId);
+      .eq("user_id", session.user_id);
 
     if (error) throw error;
 
@@ -445,7 +445,7 @@ export async function addCategory(name: string) {
     const { data: existingCategory, error: queryError } = await supabase
       .from("categories")
       .select("*")
-      .eq("user_id", session.userId)
+      .eq("user_id", session.user_id)
       .eq("name", name)
       .single();
 
@@ -456,7 +456,7 @@ export async function addCategory(name: string) {
     const { error } = await supabase.from("categories").insert([
       {
         id: uuidv4(),
-        user_id: session.userId,
+        user_id: session.user_id,
         name: name.toLowerCase(),
       },
     ]);
@@ -486,7 +486,7 @@ export async function getCurrentUser() {
     const { data: user, error } = await supabase
       .from("users")
       .select("id, name, email, created_at") // <-- Use `created_at` here
-      .eq("id", session.userId)
+      .eq("id", session.user_id)
       .single();
 
     if (error) throw error;

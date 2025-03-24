@@ -164,7 +164,7 @@ export async function signUp(formData: {
         supabase.from("categories").insert([
           {
             id: uuidv4(),
-            userId: newUser.id,
+            user_id: newUser.id,
             name: category,
           },
         ])
@@ -292,7 +292,7 @@ export async function getQuotes() {
     const { data: userQuotes, error } = await supabase
       .from("quotes")
       .select("*")
-      .eq("userId", session.userId)
+      .eq("user_id", session.userId)
       .order("createdAt", { ascending: false });
 
     if (error) throw error;
@@ -323,7 +323,7 @@ export async function addQuote(quoteData: {
       .insert([
         {
           id: uuidv4(),
-          userId: session.userId,
+          user_id: session.userId,
           text: quoteData.text,
           author: quoteData.author || "Unknown",
           category: quoteData.category,
@@ -366,7 +366,7 @@ export async function updateQuote(quoteData: {
         category: quoteData.category,
       })
       .eq("id", quoteData.id)
-      .eq("userId", session.userId);
+      .eq("user_id", session.userId);
 
     if (error) throw error;
 
@@ -393,7 +393,7 @@ export async function deleteQuote(id: string) {
       .from("quotes")
       .delete()
       .eq("id", id)
-      .eq("userId", session.userId);
+      .eq("user_id", session.userId);
 
     if (error) throw error;
 
@@ -420,7 +420,7 @@ export async function getCategories() {
     const { data: userCategories, error } = await supabase
       .from("categories")
       .select("name")
-      .eq("userId", session.userId);
+      .eq("user_id", session.userId);
 
     if (error) throw error;
 
@@ -445,7 +445,7 @@ export async function addCategory(name: string) {
     const { data: existingCategory, error: queryError } = await supabase
       .from("categories")
       .select("*")
-      .eq("userId", session.userId)
+      .eq("user_id", session.userId)
       .eq("name", name)
       .single();
 
@@ -456,7 +456,7 @@ export async function addCategory(name: string) {
     const { error } = await supabase.from("categories").insert([
       {
         id: uuidv4(),
-        userId: session.userId,
+        user_id: session.userId,
         name: name.toLowerCase(),
       },
     ]);

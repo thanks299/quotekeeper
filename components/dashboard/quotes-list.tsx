@@ -118,6 +118,7 @@ export function QuotesList({
                 categories={categories}
                 onEdit={onEditQuote}
                 onDelete={onDeleteQuote}
+                className={index === 0 ? "quote-card" : ""}
               />
             ))}
           </AnimatePresence>

@@ -33,10 +33,22 @@ export function QuoteForm({ categories, onAddQuote, isSubmitting }: QuoteFormPro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (quoteToBeAdded.text.trim() === "") return
+    console.log("Form submitted with data:", quoteToBeAdded)
 
-    await onAddQuote(quoteToBeAdded)
-    setQuoteToBeAdded({ text: "", author: "", category: "inspiration" })
+    if (quoteToBeAdded.text.trim() === "") {
+      console.log("Quote text is empty, not submitting")
+      return
+    }
+
+    try {
+      console.log("Calling onAddQuote...")
+      await onAddQuote(quoteToBeAdded)
+      console.log("Quote added successfully")
+      // Reset form after successful submission
+      setQuoteToBeAdded({ text: "", author: "", category: "inspiration" })
+    } catch (error) {
+      console.error("Error adding quote:", error)
+    }
   }
 
   return (

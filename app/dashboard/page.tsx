@@ -286,7 +286,7 @@ export default function DashboardPage() {
       <main className="container py-6 md:py-10">
         <div className="flex flex-col gap-8">
           <div className="flex flex-col gap-2">
-            <h1 className="text-3xl font-bold">Your Quote Dashboard</h1>
+            <h1 className="text-3xl font-bold">My Dashboard</h1>
             <p className="text-muted-foreground">Manage your personal collection of quotes</p>
           </div>
 

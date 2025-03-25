@@ -24,8 +24,7 @@ Join the QuoteKeeper community today and start collecting, organizing, and shari
 
 *Sign up now 👉* https://quotekeeperjustforyou.netlify.app/
 
-*To Getting Started*
-To get started with QuoteKeeper, follow these steps:
+*To Getting Started with QuoteKeeper, follow these steps:*
 
 1. *Sign up*: Create an account by clicking the "Sign up" button on our website.
 2. *Verify your email*: Verify your email address to activate your account. A confirmation email is sent to your spam box follow the link been sent to continue signin process

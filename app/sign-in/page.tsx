@@ -1,18 +1,20 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { signIn } from "@/app/actions";
-import { useToast } from "@/components/ui/use-toast";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { QuoteIcon, LogIn } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { motion } from "framer-motion";
-import Link from "next/link";
-import { AuthIllustration } from "@/components/auth-illustration";
+import type React from "react"
+
+import { useState } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { QuoteIcon, LogIn } from "lucide-react"
+import { ThemeToggle } from "@/components/theme-toggle"
+import { signIn } from "@/app/actions"
+import { useToast } from "@/components/ui/use-toast"
+import { motion } from "framer-motion"
+import { AuthIllustration } from "@/components/auth-illustration"
 
 export default function SignInPage() {
   const router = useRouter();

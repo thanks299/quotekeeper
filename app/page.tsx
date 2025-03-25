@@ -235,7 +235,7 @@ export default function HomePage() {
             <Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Terms of Service
             </Link>
-            <Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Privacy
             </Link>
           </div>

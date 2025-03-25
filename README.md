@@ -1,8 +1,8 @@
-##Unlock the Power of Your Quotes! 🚀
+#Unlock the Power of Your Quotes! 🚀
 
 Tired of losing track of your favorite quotes? Do you want to keep your words of wisdom organized and easily accessible?
 
-##Introducing QuoteKeeper: Your Personal Quote Vault! 📚
+#Introducing QuoteKeeper: Your Personal Quote Vault! 📚
 
 With QuoteKeeper, you can:
 
@@ -18,13 +18,13 @@ With QuoteKeeper, you can:
 📊 Advanced search and filtering
 📱 Mobile-friendly design
 
-##Don't let your quotes slip away! 🤯
+#Don't let your quotes slip away! 🤯
 
 Join the QuoteKeeper community today and start collecting, organizing, and sharing your favorite quotes!
 
 ##Sign up now 👉 https://quotekeeperjustforyou.netlify.app/
 
-##To Getting Started
+#To Getting Started
 
 
 To get started with QuoteKeeper, follow these steps:

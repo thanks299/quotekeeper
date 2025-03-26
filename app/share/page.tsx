@@ -30,7 +30,7 @@ export default function SharePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
-  const [imageError, setImageError] = useState(false)
+  const [, setImageError] = useState(false)
 
   // Check if device is mobile
   const isMobile = useMediaQuery("(max-width: 640px)")
@@ -44,7 +44,7 @@ export default function SharePage() {
       }
 
       try {
-        const { data, error } = await supabase.from("quotes").select("*").eq("id", quoteId).single()
+        const { data, error } = await supabase.from("quotes").select("*").eq("id", quoteId ?? "").single()
 
         if (error) throw error
 
@@ -87,7 +87,7 @@ export default function SharePage() {
   }, [quoteId, isMobile])
 
   // Native share function - IMPORTANT: This must be called directly from a user interaction
-  const handleShare = async (event: React.MouseEvent) => {
+  const handleShare = async () => {
     if (!quote) return
 
     if (navigator.share) {
@@ -167,7 +167,7 @@ export default function SharePage() {
               <CardContent className="p-6">
                 <div className="mb-4">
                   <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">
-                    {quote?.category.charAt(0).toUpperCase() + quote?.category.slice(1)}
+                    {quote?.category ? quote.category.charAt(0).toUpperCase() + quote.category.slice(1) : "Unknown"}
                   </span>
                 </div>
                 <blockquote className="text-xl italic">"{quote?.text}"</blockquote>
@@ -191,7 +191,7 @@ export default function SharePage() {
               </CardContent>
               <CardFooter className="bg-muted/30 p-4 flex flex-wrap gap-2 justify-between">
                 <div className="flex gap-2">
-                  {navigator.share && (
+                  {"share" in navigator && (
                     <Button size="sm" onClick={handleShare} className="flex items-center gap-1">
                       <Share2 className="h-4 w-4" />
                       Share

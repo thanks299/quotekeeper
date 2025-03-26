@@ -16,11 +16,11 @@ export const contentType = "image/png"
 export default async function Image({ params }: { params: { id: string } }) {
   try {
     // Font
-    const interBold = await fetch(new URL("../../../public/fonts/Inter-Bold.ttf", import.meta.url)).then((res) =>
+    const interBold = await fetch(new URL("/app/fonts/Inter-Bold.ttf", import.meta.url)).then((res) =>
       res.arrayBuffer(),
     )
 
-    const interRegular = await fetch(new URL("../../../public/fonts/Inter-Regular.ttf", import.meta.url)).then((res) =>
+    const interRegular = await fetch(new URL("/app/fonts/Inter-Regular.ttf", import.meta.url)).then((res) =>
       res.arrayBuffer(),
     )
 

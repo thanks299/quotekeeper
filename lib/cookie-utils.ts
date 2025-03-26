@@ -115,3 +115,69 @@ export function needsCookieConsent(): boolean {
   return true
 }
 
+// NEW FUNCTIONS
+
+// Set a cookie based on user consent
+export function setCookieWithConsent(
+  name: string,
+  value: string,
+  category: CookieCategory,
+  options: { days?: number; path?: string; domain?: string; secure?: boolean } = {},
+): boolean {
+  // Check if the cookie category is allowed
+  if (!isCookieCategoryAllowed(category)) {
+    console.log(`Cookie '${name}' not set because '${category}' cookies are not allowed`)
+    return false
+  }
+
+  // Set the cookie
+  const { days = 30, path = "/", domain, secure = true } = options
+
+  const expires = new Date()
+  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000)
+
+  let cookieString = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=${path}`
+
+  if (domain) {
+    cookieString += `; domain=${domain}`
+  }
+
+  if (secure) {
+    cookieString += "; secure"
+  }
+
+  document.cookie = cookieString
+  return true
+}
+
+// Get a cookie value
+export function getCookie(name: string): string | null {
+  if (typeof document === "undefined") {
+    return null // Return null if not in browser environment
+  }
+
+  const nameEQ = encodeURIComponent(name) + "="
+  const cookies = document.cookie.split(";")
+
+  for (let i = 0; i < cookies.length; i++) {
+    let cookie = cookies[i]
+    while (cookie.charAt(0) === " ") {
+      cookie = cookie.substring(1, cookie.length)
+    }
+    if (cookie.indexOf(nameEQ) === 0) {
+      return decodeURIComponent(cookie.substring(nameEQ.length, cookie.length))
+    }
+  }
+
+  return null
+}
+
+// Delete a cookie
+export function deleteCookie(name: string, path = "/", domain?: string): void {
+  if (typeof document === "undefined") {
+    return // Return if not in browser environment
+  }
+
+  document.cookie = `${encodeURIComponent(name)}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${path}${domain ? `; domain=${domain}` : ""}`
+}
+

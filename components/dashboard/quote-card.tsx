@@ -1,14 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Edit, Trash2, Check, X } from "lucide-react"
+import { Edit, Trash2, Check, X, Share2, Tag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useAnalytics } from "@/lib/analytics-service"
+import { useFunctional } from "@/lib/functional-service"
+import { ShareDialog } from "./share-dialog"
+import { EditCategoryDialog } from "./edit-category-dialog"
 
 interface QuoteData {
   id: string
@@ -28,6 +32,27 @@ interface QuoteCardProps {
 export function QuoteCard({ quote, categories, onEdit, onDelete, className }: QuoteCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editedQuote, setEditedQuote] = useState<QuoteData>(quote)
+  const [shareDialogOpen, setShareDialogOpen] = useState(false)
+  const [editCategoryDialogOpen, setEditCategoryDialogOpen] = useState(false)
+
+  // Track quote views with analytics
+  const analytics = useAnalytics()
+  const functional = useFunctional()
+
+  useEffect(() => {
+    // Track that this quote was viewed
+    analytics.trackEvent("quote_viewed", {
+      quote_id: quote.id,
+      quote_author: quote.author,
+      quote_category: quote.category,
+    })
+
+    // Save this quote to recently viewed quotes
+    const lastViewedQuotes = functional.getLastViewedQuotes()
+    if (!lastViewedQuotes.includes(quote.id)) {
+      functional.saveLastViewedQuotes([quote.id, ...lastViewedQuotes])
+    }
+  }, [quote.id, quote.author, quote.category, analytics, functional])
 
   const handleStartEdit = () => {
     setIsEditing(true)
@@ -45,6 +70,26 @@ export function QuoteCard({ quote, categories, onEdit, onDelete, className }: Qu
 
   const handleDeleteQuote = async () => {
     await onDelete(quote.id)
+  }
+
+  const handleShare = () => {
+    setShareDialogOpen(true)
+    analytics.trackEvent("quote_shared", {
+      quote_id: quote.id,
+      quote_author: quote.author,
+      quote_category: quote.category,
+    })
+  }
+
+  const handleEditCategory = () => {
+    setEditCategoryDialogOpen(true)
+  }
+
+  const handleSaveCategory = async (quoteId: string, newCategory: string) => {
+    await onEdit({
+      ...quote,
+      category: newCategory,
+    })
   }
 
   return (
@@ -108,15 +153,38 @@ export function QuoteCard({ quote, categories, onEdit, onDelete, className }: Qu
           ) : (
             <div className="space-y-3">
               <div className="flex justify-between items-start">
-                <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">
-                  {quote.category.charAt(0).toUpperCase() + quote.category.slice(1)}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">
+                    {quote.category.charAt(0).toUpperCase() + quote.category.slice(1)}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleEditCategory}
+                    className="h-6 w-6 transition-all duration-200 hover:scale-110"
+                    title="Edit Category"
+                  >
+                    <Tag className="h-3 w-3" />
+                    <span className="sr-only">Edit Category</span>
+                  </Button>
+                </div>
                 <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleShare}
+                    className="h-8 w-8 transition-all duration-200 hover:scale-110"
+                    title="Share Quote"
+                  >
+                    <Share2 className="h-4 w-4" />
+                    <span className="sr-only">Share</span>
+                  </Button>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={handleStartEdit}
                     className="h-8 w-8 transition-all duration-200 hover:scale-110"
+                    title="Edit Quote"
                   >
                     <Edit className="h-4 w-4" />
                     <span className="sr-only">Edit</span>
@@ -126,6 +194,7 @@ export function QuoteCard({ quote, categories, onEdit, onDelete, className }: Qu
                     size="icon"
                     onClick={handleDeleteQuote}
                     className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10 transition-all duration-200 hover:scale-110"
+                    title="Delete Quote"
                   >
                     <Trash2 className="h-4 w-4" />
                     <span className="sr-only">Delete</span>
@@ -138,6 +207,18 @@ export function QuoteCard({ quote, categories, onEdit, onDelete, className }: Qu
           )}
         </CardContent>
       </Card>
+
+      {/* Share Dialog */}
+      <ShareDialog open={shareDialogOpen} onOpenChange={setShareDialogOpen} quote={quote} />
+
+      {/* Edit Category Dialog */}
+      <EditCategoryDialog
+        open={editCategoryDialogOpen}
+        onOpenChange={setEditCategoryDialogOpen}
+        quote={quote}
+        categories={categories}
+        onSave={handleSaveCategory}
+      />
     </motion.div>
   )
 }

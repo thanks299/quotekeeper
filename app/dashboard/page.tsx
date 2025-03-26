@@ -238,6 +238,15 @@ export default function DashboardPage() {
     }
   }
 
+  // Handle updating just the category of a quote
+  const handleUpdateCategory = async (quoteId: string, newCategory: string) => {
+    const quoteToUpdate = quotes.find((q) => q.id === quoteId)
+    if (!quoteToUpdate) return
+
+    const updatedQuote = { ...quoteToUpdate, category: newCategory }
+    await handleEditQuote(updatedQuote)
+  }
+
   // Handle adding a category
   const handleAddCategory = async (name: string) => {
     if (name.trim() === "" || categories.includes(name.toLowerCase())) return
@@ -314,6 +323,7 @@ export default function DashboardPage() {
                   onCategoryChange={setActiveCategory}
                   onEditQuote={handleEditQuote}
                   onDeleteQuote={handleDeleteQuote}
+                  onUpdateCategory={handleUpdateCategory}
                   isLoading={loading}
                 />
               </TabsContent>

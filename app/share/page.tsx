@@ -23,7 +23,7 @@ interface QuoteType {
 
 export default function SharePage() {
   const searchParams = useSearchParams()
-  const quoteId = searchParams.get("id")
+  const quoteId = searchParams?.get("id") || null
   const { toast } = useToast()
 
   const [quote, setQuote] = useState<QuoteType | null>(null)
@@ -38,6 +38,7 @@ export default function SharePage() {
   useEffect(() => {
     async function fetchQuote() {
       if (!quoteId) {
+        console.warn("No quote ID provided")
         setError("No quote ID provided")
         setLoading(false)
         return
@@ -219,4 +220,3 @@ export default function SharePage() {
     </div>
   )
 }
-

@@ -1,33 +1,43 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { supabase } from "@/lib/supabaseClient"
-import { getQuoteImageUrl, getQuoteShareUrl } from "@/lib/quote-image"
+import type React from "react";
+import type { Metadata } from "next";
+import { supabase } from "@/lib/supabaseClient";
+import { getQuoteImageUrl, getQuoteShareUrl } from "@/lib/quote-image";
 
 // Define the type for the params
 type Props = {
-  params: {}
-  searchParams: { [key: string]: string | string[] | undefined }
-}
+  params: {};
+  searchParams: { [key: string]: string | string[] | undefined };
+};
 
-export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+// Dynamic metadata generation for share pages
+export const dynamic = "force-dynamic";
+export const revalidate = false;
+
+export async function generateMetadata({
+  searchParams,
+}: Props): Promise<Metadata> {
   // Read the id from search params
-  const id = searchParams.id as string
+  const id = searchParams.id as string;
 
   // Default metadata
   let metadata: Metadata = {
     title: "Shared Quote | QuoteApp",
     description: "View this inspirational quote shared from QuoteApp.",
-  }
+  };
 
   // If we have an ID, try to fetch the quote
   if (id) {
     try {
-      const { data: quote } = await supabase.from("quotes").select("*").eq("id", id).single()
+      const { data: quote } = await supabase
+        .from("quotes")
+        .select("*")
+        .eq("id", id)
+        .single();
 
       if (quote) {
-        const quoteText = `"${quote.text}" — ${quote.author}`
-        const imageUrl = getQuoteImageUrl(quote)
-        const shareUrl = getQuoteShareUrl(quote.id)
+        const quoteText = `"${quote.text}" — ${quote.author}`;
+        const imageUrl = getQuoteImageUrl(quote);
+        const shareUrl = getQuoteShareUrl(quote.id);
 
         metadata = {
           title: `Quote by ${quote.author} | QuoteApp`,
@@ -53,21 +63,20 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
             description: quoteText,
             images: [imageUrl],
           },
-        }
+        };
       }
     } catch (error) {
-      console.error("Error fetching quote for metadata:", error)
+      console.error("Error fetching quote for metadata:", error);
     }
   }
 
-  return metadata
+  return metadata;
 }
 
 export default function ShareLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  return <div className="share-layout">{children}</div>
+  return <div className="share-layout">{children}</div>;
 }
-

@@ -20,7 +20,8 @@ interface Quote {
 }
 
 // Disable static generation and force dynamic rendering
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
+export const revalidate = false;
 
 export default function SharePage() {
   const searchParams = useSearchParams();
@@ -56,12 +57,16 @@ export default function SharePage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted/50 p-4">
         <div className="w-full max-w-md">
-          <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6">
+          <Link
+            href="/"
+            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6">
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to home
           </Link>
           <Card className="border-primary/20 shadow-lg">
             <CardContent className="p-6 text-center">
-              <div className="text-destructive mb-2">Error: No quote ID provided</div>
+              <div className="text-destructive mb-2">
+                Error: No quote ID provided
+              </div>
               <p className="text-muted-foreground">
                 Please provide a valid quote ID in the URL.
               </p>
@@ -97,7 +102,7 @@ export default function SharePage() {
         try {
           const size = isMobile ? "mobile" : "default";
           const url = getQuoteImageUrl(data, "light", size);
-          
+
           if (url) {
             setImageUrl(url);
             setImageLoading(true);
@@ -188,7 +193,8 @@ export default function SharePage() {
       console.error("Error downloading image:", error);
       toast({
         title: "Download failed",
-        description: "There was an error downloading the image. Please try again.",
+        description:
+          "There was an error downloading the image. Please try again.",
         variant: "destructive",
       });
     }
@@ -197,7 +203,9 @@ export default function SharePage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted/50 p-4">
       <div className="w-full max-w-md">
-        <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6">
+        <Link
+          href="/"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to home
         </Link>
 
@@ -212,7 +220,8 @@ export default function SharePage() {
             <CardContent className="p-6 text-center">
               <div className="text-destructive mb-2">Error: {error}</div>
               <p className="text-muted-foreground">
-                The quote you're looking for might have been removed or doesn't exist.
+                The quote you're looking for might have been removed or doesn't
+                exist.
               </p>
             </CardContent>
           ) : (
@@ -220,11 +229,18 @@ export default function SharePage() {
               <CardContent className="p-6">
                 <div className="mb-4">
                   <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">
-                    {quote?.category ? quote.category.charAt(0).toUpperCase() + quote.category.slice(1) : "Unknown"}
+                    {quote?.category
+                      ? quote.category.charAt(0).toUpperCase() +
+                        quote.category.slice(1)
+                      : "Unknown"}
                   </span>
                 </div>
-                <blockquote className="text-xl italic">"{quote?.text}"</blockquote>
-                <p className="text-sm text-muted-foreground mt-2">— {quote?.author}</p>
+                <blockquote className="text-xl italic">
+                  "{quote?.text}"
+                </blockquote>
+                <p className="text-sm text-muted-foreground mt-2">
+                  — {quote?.author}
+                </p>
 
                 {imageUrl && (
                   <div className="mt-6 border rounded-md overflow-hidden">
@@ -232,7 +248,9 @@ export default function SharePage() {
                     <img
                       src={imageUrl}
                       alt={`Quote by ${quote?.author}`}
-                      className={`w-full h-auto ${imageLoading ? 'hidden' : 'block'}`}
+                      className={`w-full h-auto ${
+                        imageLoading ? "hidden" : "block"
+                      }`}
                       onLoad={() => setImageLoading(false)}
                       onError={() => {
                         setImageError(true);
@@ -248,12 +266,19 @@ export default function SharePage() {
                 {quote && (
                   <div className="flex gap-2">
                     {"share" in navigator && (
-                      <Button size="sm" onClick={handleShare} className="flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        onClick={handleShare}
+                        className="flex items-center gap-1">
                         <Share2 className="h-4 w-4" /> Share
                       </Button>
                     )}
                     {imageUrl && (
-                      <Button size="sm" variant="outline" onClick={downloadImage} className="flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={downloadImage}
+                        className="flex items-center gap-1">
                         <Download className="h-4 w-4" /> Image
                       </Button>
                     )}

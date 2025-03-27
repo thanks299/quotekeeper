@@ -19,6 +19,9 @@ interface Quote {
   category: string;
 }
 
+// Disable static generation and force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default function SharePage() {
   const searchParams = useSearchParams();
   const quoteId = searchParams?.get("id");
@@ -28,17 +31,32 @@ export default function SharePage() {
   const [error, setError] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
 
   const isMobile = useMediaQuery("(max-width: 640px)");
 
-  useEffect(() => {
-    if (!quoteId) {
-      console.warn("No quote ID provided");
-      setError("No quote ID provided");
-      setLoading(false);
-      return;
-    }
+  // Handle case when no quoteId is provided
+  if (!quoteId) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted/50 p-4">
+        <div className="w-full max-w-md">
+          <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to home
+          </Link>
+          <Card className="border-primary/20 shadow-lg">
+            <CardContent className="p-6 text-center">
+              <div className="text-destructive mb-2">Error: No quote ID provided</div>
+              <p className="text-muted-foreground">
+                Please provide a valid quote ID in the URL.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
+  useEffect(() => {
     async function fetchQuote() {
       try {
         const { data, error } = await supabase
@@ -60,14 +78,19 @@ export default function SharePage() {
         const size = isMobile ? "mobile" : "default";
         const url = getQuoteImageUrl(data, "light", size);
         setImageUrl(url);
+        setImageLoading(true);
 
         // Preload image
         const img = new Image();
         img.crossOrigin = "anonymous";
-        img.onload = () => setImageError(false);
+        img.onload = () => {
+          setImageError(false);
+          setImageLoading(false);
+        };
         img.onerror = () => {
           console.error("Failed to load image, using fallback");
           setImageError(true);
+          setImageLoading(false);
           setImageUrl(getFallbackImageUrl(data));
         };
         img.src = url;
@@ -166,12 +189,15 @@ export default function SharePage() {
 
                 {imageUrl && (
                   <div className="mt-6 border rounded-md overflow-hidden">
+                    {imageLoading && <Skeleton className="w-full h-48" />}
                     <img
                       src={imageUrl}
                       alt={`Quote by ${quote?.author}`}
-                      className="w-full h-auto"
+                      className={`w-full h-auto ${imageLoading ? 'hidden' : 'block'}`}
+                      onLoad={() => setImageLoading(false)}
                       onError={() => {
                         setImageError(true);
+                        setImageLoading(false);
                         if (quote) setImageUrl(getFallbackImageUrl(quote));
                       }}
                     />

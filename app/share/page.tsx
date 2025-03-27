@@ -32,10 +32,26 @@ export default function SharePage() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
 
   const isMobile = useMediaQuery("(max-width: 640px)");
 
-  // Handle case when no quoteId is provided
+  // Ensure we're client-side before using searchParams
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Early return if no quoteId is provided
+  if (!isClient) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <Skeleton className="h-10 w-full" />
+        </div>
+      </div>
+    );
+  }
+
   if (!quoteId) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted/50 p-4">
@@ -57,6 +73,8 @@ export default function SharePage() {
   }
 
   useEffect(() => {
+    let isMounted = true;
+
     async function fetchQuote() {
       try {
         const { data, error } = await supabase
@@ -65,8 +83,9 @@ export default function SharePage() {
           .eq("id", quoteId)
           .single();
 
-        if (error) throw error;
+        if (!isMounted) return;
 
+        if (error) throw error;
         if (!data) {
           setError("Quote not found");
           return;
@@ -75,34 +94,54 @@ export default function SharePage() {
         setQuote(data);
 
         // Generate image URL
-        const size = isMobile ? "mobile" : "default";
-        const url = getQuoteImageUrl(data, "light", size);
-        setImageUrl(url);
-        setImageLoading(true);
+        try {
+          const size = isMobile ? "mobile" : "default";
+          const url = getQuoteImageUrl(data, "light", size);
+          
+          if (url) {
+            setImageUrl(url);
+            setImageLoading(true);
 
-        // Preload image
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => {
-          setImageError(false);
-          setImageLoading(false);
-        };
-        img.onerror = () => {
-          console.error("Failed to load image, using fallback");
-          setImageError(true);
-          setImageLoading(false);
-          setImageUrl(getFallbackImageUrl(data));
-        };
-        img.src = url;
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+              if (isMounted) {
+                setImageError(false);
+                setImageLoading(false);
+              }
+            };
+            img.onerror = () => {
+              if (isMounted) {
+                setImageError(true);
+                setImageLoading(false);
+                setImageUrl(getFallbackImageUrl(data));
+              }
+            };
+            img.src = url;
+          }
+        } catch (imgError) {
+          console.error("Image generation error:", imgError);
+          if (isMounted && data) {
+            setImageUrl(getFallbackImageUrl(data));
+          }
+        }
       } catch (err) {
         console.error("Error fetching quote:", err);
-        setError("Failed to load quote");
+        if (isMounted) {
+          setError("Failed to load quote");
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
 
     fetchQuote();
+
+    return () => {
+      isMounted = false;
+    };
   }, [quoteId, isMobile]);
 
   const handleShare = async () => {
@@ -116,7 +155,7 @@ export default function SharePage() {
           url: window.location.href,
         });
       } else {
-        navigator.clipboard.writeText(window.location.href);
+        await navigator.clipboard.writeText(window.location.href);
         toast({
           title: "Link copied",
           description: "The link has been copied to your clipboard.",

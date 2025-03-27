@@ -13,6 +13,7 @@ import { QuoteForm } from "@/components/dashboard/quote-form"
 import { CategoryForm } from "@/components/dashboard/category-form"
 import { ErrorBoundary } from "@/components/error-boundary"
 import { DashboardTour } from "@/components/dashboard/dashboard-tour"
+import { Share2 } from "lucide-react"
 
 interface Quote {
   id: string
@@ -36,26 +37,20 @@ export default function DashboardPage() {
   const [activeCategory, setActiveCategory] = useState("all")
   const [loading, setLoading] = useState(true)
   const [addingQuote, setAddingQuote] = useState(false)
+  const [sharingQuote, setSharingQuote] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [usingLocalStorage, setUsingLocalStorage] = useState(false)
 
   // Handle database fallback
   const handleDatabaseFallback = () => {
-    // If we can't connect to the database, we'll use local storage as a fallback
     const useLocalStorage = () => {
       setUsingLocalStorage(true)
-
-      // Load quotes from local storage
       try {
         const storedQuotes = localStorage.getItem("quotes")
-        if (storedQuotes) {
-          setQuotes(JSON.parse(storedQuotes))
-        }
+        if (storedQuotes) setQuotes(JSON.parse(storedQuotes))
 
         const storedCategories = localStorage.getItem("categories")
-        if (storedCategories) {
-          setCategories(JSON.parse(storedCategories))
-        }
+        if (storedCategories) setCategories(JSON.parse(storedCategories))
 
         setErrorMessage("Database connection failed. Using local storage temporarily.")
       } catch (e) {
@@ -64,7 +59,6 @@ export default function DashboardPage() {
         setLoading(false)
       }
     }
-
     return useLocalStorage
   }
 
@@ -76,7 +70,7 @@ export default function DashboardPage() {
     }
   }, [usingLocalStorage, quotes, categories])
 
-  // Fetch quotes and categories when component mounts
+  // Fetch quotes and categories
   useEffect(() => {
     const fetchData = async () => {
       if (!authLoading && user) {
@@ -84,18 +78,12 @@ export default function DashboardPage() {
           setErrorMessage(null)
           setLoading(true)
 
-          // Try to get quotes first as a connection test
           const quotesData = await getQuotes()
-
-          // If we got here, connection worked, so get categories
           const categoriesData = await getCategories()
 
           setQuotes(quotesData || [])
-          if (categoriesData && categoriesData.length > 0) {
-            setCategories(categoriesData)
-          }
+          if (categoriesData?.length > 0) setCategories(categoriesData)
 
-          // If we previously used local storage but now DB works, clear the flag
           if (usingLocalStorage) {
             setUsingLocalStorage(false)
             toast({
@@ -128,50 +116,66 @@ export default function DashboardPage() {
     router.push(`?tab=${value}`)
   }
 
+  // Handle share quote
+  const handleShareQuote = async (quoteId: string) => {
+    setSharingQuote(true)
+    try {
+      const quote = quotes.find(q => q.id === quoteId)
+      if (!quote) return
+
+      const shareUrl = `${window.location.origin}/share?id=${encodeURIComponent(quoteId)}`
+      
+      if (navigator.share) {
+        await navigator.share({
+          title: `Quote by ${quote.author}`,
+          text: `"${quote.text}" - ${quote.author}`,
+          url: shareUrl
+        })
+      } else {
+        await navigator.clipboard.writeText(shareUrl)
+        toast({
+          title: "Link copied!",
+          description: "Share link copied to clipboard",
+        })
+      }
+    } catch (error) {
+      console.error("Sharing failed:", error)
+      toast({
+        variant: "destructive",
+        title: "Sharing failed",
+        description: "Couldn't share the quote. Please try again.",
+      })
+    } finally {
+      setSharingQuote(false)
+    }
+  }
+
   // Handle adding a quote
   const handleAddQuote = async (quoteData: { text: string; author: string; category: string }) => {
     setAddingQuote(true)
-
     try {
       if (usingLocalStorage) {
-        // Add quote to local state when using local storage fallback
-        const newQuoteData = {
+        const newQuote = {
           id: crypto.randomUUID(),
-          text: quoteData.text,
-          author: quoteData.author || "Unknown",
-          category: quoteData.category,
+          ...quoteData,
+          author: quoteData.author || "Unknown"
         }
-
-        setQuotes([...quotes, newQuoteData])
-
-        toast({
-          title: "Quote added locally",
-          description: "Your quote has been added to local storage.",
-        })
+        setQuotes([...quotes, newQuote])
+        toast({ title: "Quote added locally" })
       } else {
-        // Add quote to database
-        const newQuoteData = await addQuote({
-          text: quoteData.text,
-          author: quoteData.author || "Unknown",
-          category: quoteData.category,
+        const newQuote = await addQuote({
+          ...quoteData,
+          author: quoteData.author || "Unknown"
         })
-
-        setQuotes([...quotes, newQuoteData])
-
-        toast({
-          title: "Quote added",
-          description: "Your quote has been added successfully.",
-        })
+        setQuotes([...quotes, newQuote])
+        toast({ title: "Quote added" })
       }
-
-      // Switch to quotes tab after adding
       router.push("/dashboard?tab=quotes")
     } catch (error) {
-      console.error("Error adding quote:", error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to add quote. Please check your database connection.",
+        description: "Failed to add quote.",
       })
     } finally {
       setAddingQuote(false)
@@ -182,28 +186,18 @@ export default function DashboardPage() {
   const handleDeleteQuote = async (id: string) => {
     try {
       if (usingLocalStorage) {
-        // Delete quote from local state when using local storage fallback
-        setQuotes(quotes.filter((quote) => quote.id !== id))
-
-        toast({
-          title: "Quote deleted locally",
-          description: "Your quote has been deleted from local storage.",
-        })
+        setQuotes(quotes.filter(quote => quote.id !== id))
+        toast({ title: "Quote deleted locally" })
       } else {
-        // Delete quote from database
         await deleteQuote(id)
-        setQuotes(quotes.filter((quote) => quote.id !== id))
-
-        toast({
-          title: "Quote deleted",
-          description: "Your quote has been deleted successfully.",
-        })
+        setQuotes(quotes.filter(quote => quote.id !== id))
+        toast({ title: "Quote deleted" })
       }
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to delete quote. Please check your database connection.",
+        description: "Failed to delete quote.",
       })
     }
   }
@@ -212,69 +206,39 @@ export default function DashboardPage() {
   const handleEditQuote = async (editedQuote: Quote) => {
     try {
       if (usingLocalStorage) {
-        // Update quote in local state when using local storage fallback
-        setQuotes(quotes.map((q) => (q.id === editedQuote.id ? editedQuote : q)))
-
-        toast({
-          title: "Quote updated locally",
-          description: "Your quote has been updated in local storage.",
-        })
+        setQuotes(quotes.map(q => q.id === editedQuote.id ? editedQuote : q))
+        toast({ title: "Quote updated locally" })
       } else {
-        // Update quote in database
         await updateQuote(editedQuote)
-        setQuotes(quotes.map((q) => (q.id === editedQuote.id ? editedQuote : q)))
-
-        toast({
-          title: "Quote updated",
-          description: "Your quote has been updated successfully.",
-        })
+        setQuotes(quotes.map(q => q.id === editedQuote.id ? editedQuote : q))
+        toast({ title: "Quote updated" })
       }
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to update quote. Please check your database connection.",
+        description: "Failed to update quote.",
       })
     }
-  }
-
-  // Handle updating just the category of a quote
-  const handleUpdateCategory = async (quoteId: string, newCategory: string) => {
-    const quoteToUpdate = quotes.find((q) => q.id === quoteId)
-    if (!quoteToUpdate) return
-
-    const updatedQuote = { ...quoteToUpdate, category: newCategory }
-    await handleEditQuote(updatedQuote)
   }
 
   // Handle adding a category
   const handleAddCategory = async (name: string) => {
     if (name.trim() === "" || categories.includes(name.toLowerCase())) return
-
     try {
       if (usingLocalStorage) {
-        // Add category to local state when using local storage fallback
         setCategories([...categories, name.toLowerCase()])
-
-        toast({
-          title: "Category added locally",
-          description: "Your category has been added to local storage.",
-        })
+        toast({ title: "Category added locally" })
       } else {
-        // Add category to database
         await addCategory(name.toLowerCase())
         setCategories([...categories, name.toLowerCase()])
-
-        toast({
-          title: "Category added",
-          description: "Your category has been added successfully.",
-        })
+        toast({ title: "Category added" })
       }
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to add category. Please check your database connection.",
+        description: "Failed to add category.",
       })
     }
   }
@@ -285,9 +249,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Add the tour component */}
-      {user && <DashboardTour userId={user.id} />}
-
+      <DashboardTour userId={user?.id} />
       <div className="dashboard-header">
         <DashboardNav />
       </div>
@@ -303,19 +265,13 @@ export default function DashboardPage() {
             {errorMessage && <ErrorDisplay errorMessage={errorMessage} isUsingLocalStorage={usingLocalStorage} />}
 
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-              <TabsList className="mb-4 tabs-list">
-                <TabsTrigger value="quotes" className="transition-all duration-200">
-                  My Quotes
-                </TabsTrigger>
-                <TabsTrigger value="add" className="transition-all duration-200">
-                  Add Quote
-                </TabsTrigger>
-                <TabsTrigger value="categories" className="transition-all duration-200">
-                  Categories
-                </TabsTrigger>
+              <TabsList className="mb-4">
+                <TabsTrigger value="quotes">My Quotes</TabsTrigger>
+                <TabsTrigger value="add">Add Quote</TabsTrigger>
+                <TabsTrigger value="categories">Categories</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="quotes" className="space-y-4 quotes-tab-content">
+              <TabsContent value="quotes" className="space-y-4">
                 <QuotesList
                   quotes={quotes}
                   categories={categories}
@@ -323,17 +279,25 @@ export default function DashboardPage() {
                   onCategoryChange={setActiveCategory}
                   onEditQuote={handleEditQuote}
                   onDeleteQuote={handleDeleteQuote}
-                  onUpdateCategory={handleUpdateCategory}
+                  onShareQuote={handleShareQuote}
+                  isSharing={sharingQuote}
                   isLoading={loading}
                 />
               </TabsContent>
 
               <TabsContent value="add" className="space-y-4">
-                <QuoteForm categories={categories} onAddQuote={handleAddQuote} isSubmitting={addingQuote} />
+                <QuoteForm 
+                  categories={categories} 
+                  onAddQuote={handleAddQuote} 
+                  isSubmitting={addingQuote} 
+                />
               </TabsContent>
 
               <TabsContent value="categories" className="space-y-4">
-                <CategoryForm categories={categories} onAddCategory={handleAddCategory} />
+                <CategoryForm 
+                  categories={categories} 
+                  onAddCategory={handleAddCategory} 
+                />
               </TabsContent>
             </Tabs>
           </ErrorBoundary>
@@ -342,4 +306,3 @@ export default function DashboardPage() {
     </div>
   )
 }
-

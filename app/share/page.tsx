@@ -1,152 +1,142 @@
-"use client"
+"use client";
 
-import type React from "react"
+import React, { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowLeft, QuoteIcon, Share2, Download } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
+import { getQuoteImageUrl, getFallbackImageUrl } from "@/lib/quote-image";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { useToast } from "@/components/ui/use-toast";
 
-import { useEffect, useState } from "react"
-import { useSearchParams } from "next/navigation"
-import Link from "next/link"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
-import { ArrowLeft, QuoteIcon, Share2, Download } from "lucide-react"
-import { supabase } from "@/lib/supabaseClient"
-import { getQuoteImageUrl, getFallbackImageUrl } from "@/lib/quote-image"
-import { useMediaQuery } from "@/hooks/use-media-query"
-import { useToast } from "@/components/ui/use-toast"
-
-interface QuoteType {
-  id: string
-  text: string
-  author: string
-  category: string
+interface Quote {
+  id: string;
+  text: string;
+  author: string;
+  category: string;
 }
 
 export default function SharePage() {
-  const searchParams = useSearchParams()
-  const quoteId = searchParams?.get("id") || null
-  const { toast } = useToast()
+  const searchParams = useSearchParams();
+  const quoteId = searchParams?.get("id");
+  const { toast } = useToast();
+  const [quote, setQuote] = useState<Quote | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
 
-  const [quote, setQuote] = useState<QuoteType | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [imageUrl, setImageUrl] = useState<string | null>(null)
-  const [, setImageError] = useState(false)
-
-  // Check if device is mobile
-  const isMobile = useMediaQuery("(max-width: 640px)")
+  const isMobile = useMediaQuery("(max-width: 640px)");
 
   useEffect(() => {
+    if (!quoteId) {
+      console.warn("No quote ID provided");
+      setError("No quote ID provided");
+      setLoading(false);
+      return;
+    }
+
     async function fetchQuote() {
-      if (!quoteId) {
-        console.warn("No quote ID provided")
-        setError("No quote ID provided")
-        setLoading(false)
-        return
-      }
-
       try {
-        const { data, error } = await supabase.from("quotes").select("*").eq("id", quoteId ?? "").single()
+        const { data, error } = await supabase
+          .from("quotes")
+          .select("*")
+          .eq("id", quoteId)
+          .single();
 
-        if (error) throw error
+        if (error) throw error;
 
-        if (data) {
-          setQuote(data)
-
-          // Generate image URL
-          const size = isMobile ? "mobile" : "default"
-          try {
-            const url = getQuoteImageUrl(data, "light", size)
-            setImageUrl(url)
-
-            // Preload the image
-            const img = new Image()
-            img.crossOrigin = "anonymous" // Add this to avoid CORS issues
-            img.onload = () => setImageError(false)
-            img.onerror = () => {
-              console.error("Failed to load image, using fallback")
-              setImageError(true)
-              setImageUrl(getFallbackImageUrl(data))
-            }
-            img.src = url
-          } catch (err) {
-            console.error("Error generating image URL:", err)
-            setImageError(true)
-            setImageUrl(getFallbackImageUrl(data))
-          }
-        } else {
-          setError("Quote not found")
+        if (!data) {
+          setError("Quote not found");
+          return;
         }
+
+        setQuote(data);
+
+        // Generate image URL
+        const size = isMobile ? "mobile" : "default";
+        const url = getQuoteImageUrl(data, "light", size);
+        setImageUrl(url);
+
+        // Preload image
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => setImageError(false);
+        img.onerror = () => {
+          console.error("Failed to load image, using fallback");
+          setImageError(true);
+          setImageUrl(getFallbackImageUrl(data));
+        };
+        img.src = url;
       } catch (err) {
-        console.error("Error fetching quote:", err)
-        setError("Failed to load quote")
+        console.error("Error fetching quote:", err);
+        setError("Failed to load quote");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
-    fetchQuote()
-  }, [quoteId, isMobile])
+    fetchQuote();
+  }, [quoteId, isMobile]);
 
-  // Native share function - IMPORTANT: This must be called directly from a user interaction
   const handleShare = async () => {
-    if (!quote) return
+    if (!quote) return;
 
-    if (navigator.share) {
-      try {
+    try {
+      if (navigator.share) {
         await navigator.share({
           title: `Quote by ${quote.author}`,
           text: `"${quote.text}" — ${quote.author}`,
           url: window.location.href,
-        })
-      } catch (error) {
-        console.error("Error sharing:", error)
+        });
+      } else {
+        navigator.clipboard.writeText(window.location.href);
+        toast({
+          title: "Link copied",
+          description: "The link has been copied to your clipboard.",
+        });
       }
-    } else {
-      // Fallback for browsers that don't support the Web Share API
-      navigator.clipboard.writeText(window.location.href)
-      toast({
-        title: "Link copied",
-        description: "The link has been copied to your clipboard.",
-      })
+    } catch (error) {
+      console.error("Error sharing:", error);
     }
-  }
+  };
 
-  // Download image function
   const downloadImage = async () => {
-    if (!imageUrl) return
+    if (!imageUrl) return;
 
     try {
-      const response = await fetch(imageUrl)
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.style.display = "none"
-      a.href = url
-      a.download = `quote-${quoteId}.png`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `quote-${quoteId}.png`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
 
       toast({
         title: "Image downloaded",
         description: "The quote image has been downloaded successfully.",
-      })
+      });
     } catch (error) {
-      console.error("Error downloading image:", error)
+      console.error("Error downloading image:", error);
       toast({
         title: "Download failed",
         description: "There was an error downloading the image. Please try again.",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted/50 p-4">
       <div className="w-full max-w-md">
         <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to home
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to home
         </Link>
 
         <Card className="border-primary/20 shadow-lg">
@@ -177,39 +167,36 @@ export default function SharePage() {
                 {imageUrl && (
                   <div className="mt-6 border rounded-md overflow-hidden">
                     <img
-                      src={imageUrl || "/placeholder.svg"}
+                      src={imageUrl}
                       alt={`Quote by ${quote?.author}`}
                       className="w-full h-auto"
                       onError={() => {
-                        setImageError(true)
-                        if (quote) {
-                          setImageUrl(getFallbackImageUrl(quote))
-                        }
+                        setImageError(true);
+                        if (quote) setImageUrl(getFallbackImageUrl(quote));
                       }}
                     />
                   </div>
                 )}
               </CardContent>
-              <CardFooter className="bg-muted/30 p-4 flex flex-wrap gap-2 justify-between">
-                <div className="flex gap-2">
-                  {"share" in navigator && (
-                    <Button size="sm" onClick={handleShare} className="flex items-center gap-1">
-                      <Share2 className="h-4 w-4" />
-                      Share
-                    </Button>
-                  )}
-                  {imageUrl && (
-                    <Button size="sm" variant="outline" onClick={downloadImage} className="flex items-center gap-1">
-                      <Download className="h-4 w-4" />
-                      Image
-                    </Button>
-                  )}
-                </div>
 
+              <CardFooter className="bg-muted/30 p-4 flex flex-wrap gap-2 justify-between">
+                {quote && (
+                  <div className="flex gap-2">
+                    {"share" in navigator && (
+                      <Button size="sm" onClick={handleShare} className="flex items-center gap-1">
+                        <Share2 className="h-4 w-4" /> Share
+                      </Button>
+                    )}
+                    {imageUrl && (
+                      <Button size="sm" variant="outline" onClick={downloadImage} className="flex items-center gap-1">
+                        <Download className="h-4 w-4" /> Image
+                      </Button>
+                    )}
+                  </div>
+                )}
                 <Link href="/sign-up">
                   <Button size="sm" className="bg-primary hover:bg-primary/90">
-                    <QuoteIcon className="mr-2 h-4 w-4" />
-                    Create Your Own
+                    <QuoteIcon className="mr-2 h-4 w-4" /> Create Your Own
                   </Button>
                 </Link>
               </CardFooter>
@@ -218,5 +205,5 @@ export default function SharePage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

@@ -1,186 +1,113 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { PlusCircle, Sparkles } from "lucide-react"
+import type React from "react"
+
+import { useState } from "react"
+import { motion } from "framer-motion"
+import { PlusCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Switch } from "@/components/ui/switch"
-import { suggestCategory } from "@/lib/auto-categorize"
 
-// Define the form schema
-const formSchema = z.object({
-  text: z.string().min(1, "Quote text is required"),
-  author: z.string().optional(),
-  category: z.string().min(1, "Category is required"),
-})
-
-type FormValues = z.infer<typeof formSchema>
-
-interface QuoteFormProps {
-  onSubmit: (data: { text: string; author: string; category: string }) => Promise<void>
-  categories: string[]
-  onAddCategory: (name: string) => Promise<void>
+interface QuoteFormData {
+  text: string
+  author: string
+  category: string
 }
 
-export function QuoteForm({ onSubmit, categories, onAddCategory }: QuoteFormProps) {
-  const [newCategory, setNewCategory] = useState("")
-  const [isAddingCategory, setIsAddingCategory] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [useAutoCategory, setUseAutoCategory] = useState(true)
-  const [suggestedCategory, setSuggestedCategory] = useState<string | null>(null)
+interface QuoteFormProps {
+  categories: string[]
+  onAddQuote: (quoteData: QuoteFormData) => Promise<void>
+  isSubmitting: boolean
+}
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      text: "",
-      author: "",
-      category: categories.length > 0 ? categories[0] : "",
-    },
+export function QuoteForm({ categories, onAddQuote, isSubmitting }: QuoteFormProps) {
+  const [quoteToBeAdded, setQuoteToBeAdded] = useState<QuoteFormData>({
+    text: "",
+    author: "",
+    category: "inspiration",
   })
 
-  // Watch for changes in text and author to suggest category
-  const quoteText = watch("text")
-  const quoteAuthor = watch("author") || ""
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    console.log("Form submitted with data:", quoteToBeAdded)
 
-  useEffect(() => {
-    if (quoteText && useAutoCategory) {
-      const suggested = suggestCategory(quoteText, quoteAuthor)
-      setSuggestedCategory(suggested)
-
-      // Only auto-set the category if it's available in the categories list
-      if (categories.includes(suggested)) {
-        setValue("category", suggested)
-      }
+    if (quoteToBeAdded.text.trim() === "") {
+      console.log("Quote text is empty, not submitting")
+      return
     }
-  }, [quoteText, quoteAuthor, useAutoCategory, categories, setValue])
-
-  const handleFormSubmit = async (data: FormValues) => {
-    setIsSubmitting(true)
-    try {
-      await onSubmit({
-        text: data.text,
-        author: data.author || "Unknown",
-        category: data.category,
-      })
-      reset()
-      setSuggestedCategory(null)
-    } catch (error) {
-      console.error("Error submitting quote:", error)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const handleAddCategory = async () => {
-    if (!newCategory.trim()) return
 
     try {
-      await onAddCategory(newCategory.trim().toLowerCase())
-      setNewCategory("")
-      setIsAddingCategory(false)
+      console.log("Calling onAddQuote...")
+      await onAddQuote(quoteToBeAdded)
+      console.log("Quote added successfully")
+      // Reset form after successful submission
+      setQuoteToBeAdded({ text: "", author: "", category: "inspiration" })
     } catch (error) {
-      console.error("Error adding category:", error)
+      console.error("Error adding quote:", error)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="text">Quote</Label>
-        <Textarea id="text" placeholder="Enter your quote here..." className="min-h-[100px]" {...register("text")} />
-        {errors.text && <p className="text-sm text-destructive">{errors.text.message}</p>}
-      </div>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+      <Card className="border-primary/20">
+        <CardContent className="pt-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="quote-text">Quote</Label>
+              <Textarea
+                id="quote-text"
+                placeholder="Enter your quote here..."
+                value={quoteToBeAdded.text}
+                onChange={(e) => setQuoteToBeAdded({ ...quoteToBeAdded, text: e.target.value })}
+                className="min-h-[100px] transition-all duration-200 focus:ring-primary"
+              />
+            </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="author">Author (optional)</Label>
-        <Input id="author" placeholder="Author name" {...register("author")} />
-      </div>
+            <div className="space-y-2">
+              <Label htmlFor="quote-author">Author</Label>
+              <Input
+                id="quote-author"
+                placeholder="Author name (optional)"
+                value={quoteToBeAdded.author}
+                onChange={(e) => setQuoteToBeAdded({ ...quoteToBeAdded, author: e.target.value })}
+                className="transition-all duration-200 focus:ring-primary"
+              />
+            </div>
 
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="category">Category</Label>
-          <div className="flex items-center space-x-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-muted-foreground">Auto-categorize</span>
-                    <Switch checked={useAutoCategory} onCheckedChange={setUseAutoCategory} id="auto-categorize" />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Automatically suggest a category based on quote content</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="quote-category">Category</Label>
+              <Select
+                value={quoteToBeAdded.category}
+                onValueChange={(value) => setQuoteToBeAdded({ ...quoteToBeAdded, category: value })}
+              >
+                <SelectTrigger id="quote-category">
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category.charAt(0).toUpperCase() + category.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-        {suggestedCategory && useAutoCategory && (
-          <div className="mb-2">
-            <Badge variant="outline" className="bg-primary/10 text-primary">
-              <Sparkles className="h-3 w-3 mr-1" />
-              Suggested: {suggestedCategory.charAt(0).toUpperCase() + suggestedCategory.slice(1)}
-            </Badge>
-          </div>
-        )}
-
-        {isAddingCategory ? (
-          <div className="flex space-x-2">
-            <Input
-              placeholder="New category name"
-              value={newCategory}
-              onChange={(e) => setNewCategory(e.target.value)}
-              className="flex-1"
-            />
-            <Button type="button" onClick={handleAddCategory}>
-              Add
+            <Button
+              type="submit"
+              className="w-full interactive-button bg-gradient-to-r from-primary to-turquoise-light text-white shadow-lg shadow-primary/20"
+              disabled={quoteToBeAdded.text.trim() === "" || isSubmitting}
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              {isSubmitting ? "Adding Quote..." : "Add Quote"}
             </Button>
-            <Button type="button" variant="outline" onClick={() => setIsAddingCategory(false)}>
-              Cancel
-            </Button>
-          </div>
-        ) : (
-          <div className="flex space-x-2">
-            <Select value={watch("category")} onValueChange={(value) => setValue("category", value)}>
-              <SelectTrigger id="category" className="flex-1">
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category.charAt(0).toUpperCase() + category.slice(1)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button type="button" variant="outline" onClick={() => setIsAddingCategory(true)}>
-              <PlusCircle className="h-4 w-4 mr-1" /> New
-            </Button>
-          </div>
-        )}
-        {errors.category && <p className="text-sm text-destructive">{errors.category.message}</p>}
-      </div>
-
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? "Adding..." : "Add Quote"}
-      </Button>
-    </form>
+          </form>
+        </CardContent>
+      </Card>
+    </motion.div>
   )
 }
-
